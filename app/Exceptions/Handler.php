@@ -2,8 +2,10 @@
 
 namespace App\Exceptions;
 
+use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Throwable;
+use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class Handler extends ExceptionHandler
 {
@@ -26,5 +28,25 @@ class Handler extends ExceptionHandler
         $this->reportable(function (Throwable $e) {
             //
         });
+    }
+
+    /**
+     * Render an exception into an HTTP response.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Exception  $exception
+     * @return JsonResponse
+     */
+    public function render($request, Exception|\Throwable $exception): JsonResponse
+    {
+        if ($exception instanceof DatabaseException) {
+            return new JsonResponse(
+                [
+                    "message"   => $exception->getMessage()
+                ],
+                Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        return parent::render($request, $exception);
     }
 }

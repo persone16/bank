@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\DatabaseException;
 use App\Http\Library\ApiHelpers;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\TransactionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -16,22 +18,26 @@ class TransactionController extends Controller
 {
     use ApiHelpers;
 
-    public function transaction(Request $request): JsonResponse
+    public function __construct(public TransactionService $transactionService)
     {
-        $post = DB::table('transactions')->get();
 
-        return $this->onSuccess($post, 'Transactions Retrieved');
     }
 
-    public function singleTransaction(Request $request, $id): JsonResponse
+    public function transaction(): JsonResponse
     {
-        $transaction = DB::table('transactions')->where('id', $id)->first();
+        $transactions = $this->transactionService->getTransactions();
 
-        if (!empty($transaction)) {
-            return $this->onSuccess($transaction, 'Post Retrieved');
-        }
+        return $this->onSuccess($transactions, 'Transactions Retrieved');
+    }
 
-        return $this->onError(404, 'Post Not Found');
+    /**
+     * @throws DatabaseException
+     */
+    public function singleTransaction($id): JsonResponse
+    {
+        $transaction = $this->transactionService->getTransaction($id);
+
+        return $this->onSuccess($transaction, 'Transaction Retrieved');
     }
 
     /**
