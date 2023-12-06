@@ -4,13 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\DatabaseException;
 use App\Http\Library\ApiHelpers;
-use App\Models\Transaction;
-use App\Models\User;
+use App\Http\Requests\Transactions\StoreRequest;
 use App\Services\TransactionService;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
@@ -18,10 +16,10 @@ class TransactionController extends Controller
 {
     use ApiHelpers;
 
-    public function __construct(public TransactionService $transactionService)
-    {
-
-    }
+    public function __construct(
+        public TransactionService $transactionService,
+        public UserService $userService,
+    ) {}
 
     public function transaction(): JsonResponse
     {
@@ -47,34 +45,22 @@ class TransactionController extends Controller
      *
      * @return JsonResponse
      */
-    public function replenishTransaction(Request $request): JsonResponse {
-        $userId = $request->user()->id;
-
+    public function replenishTransaction(StoreRequest $request): JsonResponse {
         DB::beginTransaction();
         try {
             // set transaction
-            DB::table('transactions')->insert([
-                "transaction_number" => Str::uuid(),
-                "title"              => "пополнение",
-                "receiver_id"        => $userId,
-                "sum"                => (int) $request->input('sum'),
-            ]);
+            $this->transactionService->setTransaction($request);
 
             // set balance
-            $user = DB::table('users')->find($userId);
-            $insertStatus = DB::table('users')
-                ->where('id', $userId)
-                ->update([
-                    "balance" => (int) $user->balance + (int) $request->input('sum')
-                ]);
+            $this->userService->fillBalance($request);
 
             DB::commit();
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             DB::rollback();
-            return $this->onError(400, 'Transaction wrong');
+            return $this->onError(400, $exception->getMessage());
         }
 
-        return $this->onSuccess($insertStatus, 'Transaction made successful');
+        return $this->onSuccess('', 'Transaction made successful');
     }
 
     /**

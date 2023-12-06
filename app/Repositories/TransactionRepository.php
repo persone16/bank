@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\DataTransferObjects\TransactionData;
 use App\Exceptions\DatabaseException;
+use App\Models\Transaction;
 use App\Repositories\Interfaces\DatabaseRepositoryInterface;
 use Exception;
 use Illuminate\Support\Collection;
@@ -37,7 +38,7 @@ class TransactionRepository implements DatabaseRepositoryInterface
     public function getById(int $recordId, int $receiverId): TransactionData
     {
         try {
-            $transaction =  TransactionData::from(
+            $transaction = TransactionData::from(
                 DB::table('transactions')
                     ->where('id', $recordId)
                     ->where('receiver_id', $receiverId)
@@ -52,5 +53,28 @@ class TransactionRepository implements DatabaseRepositoryInterface
         } catch (Exception $exception) {
             throw new DatabaseException("Error during get a item");
         }
+    }
+
+    /**
+     * Store an item
+     *
+     * @param array $data
+     *
+     * @return Transaction
+     *
+     * @throws DatabaseException
+     */
+    public function store(array $data): Transaction
+    {
+        try {
+            return Transaction::create($data);
+        } catch (Exception $exception) {
+            throw new DatabaseException($exception->getMessage());
+        }
+    }
+
+    public function update($transaction, array $data): Transaction
+    {
+        // TODO: Implement update() method.
     }
 }

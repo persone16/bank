@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class Transaction extends Model
 {
     use HasFactory;
+
+    public $fillable = [
+        'sum',
+        'transaction_number',
+        'title',
+        'receiver_id'
+    ];
 }
